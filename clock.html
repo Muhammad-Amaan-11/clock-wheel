@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Dark Glass Clock</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* =========================================
+           1. RESET & BASIC SETUP
+           ========================================= */
+        * {
+            box-sizing: border-box;
+            outline: none;
+            user-select: none; /* Prevents text selection */
+        }
+
+        body {
+            /* PURE DARK BACKGROUND - No Rainbows */
+            background-color: #050505; 
+            
+            /* Subtle radial gradient for depth only */
+            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000000 70%);
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Rajdhani', sans-serif; /* Tech/Sci-Fi looking font */
+        }
+
+        /* Container to center the clock perfectly */
+        .stage {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px; /* Adds 3D depth */
+        }
+
+        /* =========================================
+           2. THE GLASS MATERIAL ENGINE
+           ========================================= */
+        /* This class creates the high-quality frosted glass effect */
+        .glass-panel {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Aligns text to top */
+            
+            /* THE REAL GLASS EFFECT */
+            background: rgba(255, 255, 255, 0.02); /* Extremely subtle fill */
+            backdrop-filter: blur(15px); /* Strong blur for frosted look */
+            -webkit-backdrop-filter: blur(15px);
+            
+            /* BORDERS for distinct edges */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15); /* Top light source */
+            border-bottom: 1px solid rgba(0, 0, 0, 0.4); /* Bottom shadow */
+            
+            /* SHADOWS for floating effect */
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.6), /* Deep shadow */
+                inset 0 0 30px rgba(0, 0, 0, 0.4), /* Inner depth */
+                inset 0 1px 1px rgba(255, 255, 255, 0.1); /* Top lip highlight */
+
+            /* Typography Base */
+            color: rgba(255, 255, 255, 0.25); /* Dimmed inactive text */
+            font-weight: 500;
+            letter-spacing: 1px;
+            
+            /* Smooth transitions for rotation */
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1); /* "Exponential ease out" for luxury feel */
+            
+            /* Force 3D hardware acceleration */
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* Center indicator marker (The top triangle/line) */
+        .indicator-line {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 20vh; /* Extends down */
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* =========================================
+           3. RING DIMENSIONS & LAYERING
+           ========================================= */
+        
+        /* -- RING 1: SECONDS (Outer, Static Numbers) -- */
+        #ring-seconds {
+            width: 550px;
+            height: 550px;
+            z-index: 10;
+            font-size: 14px;
+        }
+
+        /* -- RING 2: DATE (Rotates) -- */
+        #ring-date {
+            width: 440px;
+            height: 440px;
+            z-index: 20;
+            font-size: 16px;
+            /* Darker background for contrast */
+            background: rgba(0, 0, 0, 0.2); 
+        }
+
+        /* -- RING 3: MONTH (Rotates) -- */
+        #ring-month {
+            width: 330px;
+            height: 330px;
+            z-index: 30;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* -- RING 4: DAY (Innermost, Rotates) -- */
+        #ring-day {
+            width: 220px;
+            height: 220px;
+            z-index: 40;
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* -- CENTER HUB -- */
+        .center-hub {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #2a2a2a, #000);
+            box-shadow: 
+                0 10px 30px rgba(0,0,0,0.8),
+                inset 0 1px 2px rgba(255,255,255,0.2);
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* =========================================
+           4. ITEM POSITIONING (Spokes)
+           ========================================= */
+        .spoke {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 40px; /* Width of text area */
+            height: 50%; /* Reaches from top to center */
+            transform-origin: bottom center; /* Pivot from center */
+            margin-left: -20px; /* Centering fix */
+            
+            display: flex;
+            justify-content: center;
+            padding-top: 15px; /* Distance from edge */
+        }
+
+        .spoke span {
+            display: block;
+            /* Keeps text readable */
+            transform: rotate(0deg); 
+            transition: all 0.3s ease;
+        }
+
+        /* Specific padding adjustments for rings */
+        #ring-seconds .spoke { padding-top: 12px; }
+        #ring-date .spoke { padding-top: 15px; }
+        #ring-month .spoke { padding-top: 18px; }
+        #ring-day .spoke { padding-top: 22px; }
+
+
+        /* =========================================
+           5. NEON HIGHLIGHT SYSTEM (The "Glow")
+           ========================================= */
+        
+        /* Common Glow Properties */
+        .glow-text {
+            font-weight: 700;
+            transform: scale(1.2); /* Slight zoom on active item */
+        }
+
+        /* 1. SECONDS GLOW: CYAN */
+        .active-second span {
+            color: #00f7ff;
+            text-shadow: 
+                0 0 5px rgba(0, 247, 255, 0.8),
+                0 0 10px rgba(0, 247, 255, 0.6),
+                0 0 20px rgba(0, 247, 255, 0.4);
+        }
+
+        /* 2. DATE GLOW: RED/ORANGE */
+        .active-date span {
+            color: #ff3b3b;
+            text-shadow: 
+                0 0 5px rgba(255, 59, 59, 0.8),
+                0 0 15px rgba(255, 59, 59, 0.5);
+        }
+
+        /* 3. MONTH GLOW: PURPLE */
+        .active-month span {
+            color: #d800ff;
+            text-shadow: 
+                0 0 5px rgba(216, 0, 255, 0.8),
+                0 0 15px rgba(216, 0, 255, 0.5);
+        }
+
+        /* 4. DAY GLOW: GREEN */
+        .active-day span {
+            color: #00ff6a;
+            text-shadow: 
+                0 0 5px rgba(0, 255, 106, 0.8),
+                0 0 15px rgba(0, 255, 106, 0.5);
+        }
+
+        /* =========================================
+           6. HANDS DESIGN (Minimalist)
+           ========================================= */
+        .hand-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 60;
+            pointer-events: none;
+        }
+
+        /* Hour Hand */
+        #hand-hour {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 6px;
+            height: 45px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 62;
+        }
+
+        /* Minute Hand */
+        #hand-minute {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            width: 4px;
+            height: 65px;
+            background: #a0a0a0;
+            border-radius: 4px;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 61;
+        }
+
+        /* Center Pin */
+        .center-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 70;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            border: 2px solid #000;
+        }
+
+        /* Reflection on glass (Sheen) */
+        .sheen {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(to bottom right, rgba(255,255,255,0) 40%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 60%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <div class="indicator-line"></div>
+
+        <div class="glass-panel" id="ring-seconds">
+            <div class="sheen"></div>
+            </div>
+
+        <div class="glass-panel" id="ring-date">
+            <div class="sheen"></div>
+            </div>
+
+        <div class="glass-panel" id="ring-month">
+            <div class="sheen"></div>
+            </div>
+
+        <div class="glass-panel" id="ring-day">
+            <div class="sheen"></div>
+            </div>
+
+        <div class="center-hub">
+            <div class="hand-container">
+                <div id="hand-hour"></div>
+                <div id="hand-minute"></div>
+            </div>
+            <div class="center-pin"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+        const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        
+        // --- HELPER FUNCTION: CREATE SPOKES ---
+        function createSpokes(ringId, count, dataArray, type) {
+            const ring = document.getElementById(ringId);
+            const angleStep = 360 / count;
+            
+            for (let i = 0; i < count; i++) {
+                const spoke = document.createElement('div');
+                spoke.className = 'spoke';
+                
+                // Rotation placement
+                spoke.style.transform = `rotate(${i * angleStep}deg)`;
+                
+                // Create text span
+                const span = document.createElement('span');
+                
+                // Determine Text Content
+                if (dataArray) {
+                    span.textContent = dataArray[i];
+                } else {
+                    // For numbers (seconds/dates), pad with 0 (e.g., 01, 05)
+                    // Note: Logic allows for 1-based or 0-based. 
+                    // For Seconds: We want 00-59 or 01-60. Let's do 01-60 as per typical dial.
+                    // Actually, seconds are typically 00-59 or 60 at top. Let's use 1-60 for visual balance.
+                    let num = i + 1;
+                    span.textContent = num < 10 ? '0' + num : num;
+                }
+                
+                // Assign unique ID for targeting
+                span.id = `${type}-${i}`;
+                
+                spoke.appendChild(span);
+                ring.appendChild(spoke);
+            }
+        }
+
+        // --- INITIALIZATION ---
+        // 1. Seconds (60 items)
+        createSpokes('ring-seconds', 60, null, 'sec');
+        
+        // 2. Dates (31 items)
+        createSpokes('ring-date', 31, null, 'date');
+        
+        // 3. Months (12 items)
+        createSpokes('ring-month', 12, MONTHS, 'month');
+        
+        // 4. Days (7 items)
+        createSpokes('ring-day', 7, DAYS, 'day');
+
+
+        // --- MAIN CLOCK ENGINE ---
+        function updateClock() {
+            const now = new Date();
+            
+            // Get Time Units
+            const s = now.getSeconds();      // 0 - 59
+            const m = now.getMinutes();      // 0 - 59
+            const h = now.getHours();        // 0 - 23
+            
+            const date = now.getDate();      // 1 - 31
+            const month = now.getMonth();    // 0 - 11
+            const day = now.getDay();        // 0 - 6 (Sun-Sat)
+
+            // --- 1. ROTATION LOGIC (BRING ACTIVE TO TOP) ---
+            // Formula: Rotate Negative (Index * AnglePerItem)
+            
+            // Date Ring
+            const dateIndex = date - 1; // Convert 1-31 to 0-30 index
+            const dateAngle = 360 / 31;
+            document.getElementById('ring-date').style.transform = `rotate(${-dateIndex * dateAngle}deg)`;
+
+            // Month Ring
+            const monthAngle = 360 / 12;
+            document.getElementById('ring-month').style.transform = `rotate(${-month * monthAngle}deg)`;
+
+            // Day Ring
+            const dayAngle = 360 / 7;
+            document.getElementById('ring-day').style.transform = `rotate(${-day * dayAngle}deg)`;
+
+            // --- 2. HIGHLIGHT LOGIC ---
+            
+            // Clear all previous highlights
+            document.querySelectorAll('.spoke span').forEach(el => {
+                el.className = '';
+                el.parentElement.className = 'spoke'; // Reset parent scaling if any
+            });
+
+            // Highlight Seconds (Static Ring, Moving Light)
+            // Note: Our array is 0-59. If s=0 (Top), it matches index 59 (label 60) or 0 (label 01)? 
+            // Standard clock: Top is 60/00. Let's map s=0 to index 59 (the 60 label) or index 0 (01 label)?
+            // Let's make it simple: Index = s - 1. If s=0, highlight 59 (label 60).
+            let secIndex = s === 0 ? 59 : s - 1;
+            const secEl = document.getElementById(`sec-${secIndex}`);
+            if(secEl) {
+                secEl.parentElement.classList.add('glow-text', 'active-second');
+            }
+
+            // Highlight Date
+            const dateEl = document.getElementById(`date-${dateIndex}`);
+            if(dateEl) {
+                dateEl.parentElement.classList.add('glow-text', 'active-date');
+            }
+
+            // Highlight Month
+            const monthEl = document.getElementById(`month-${month}`);
+            if(monthEl) {
+                monthEl.parentElement.classList.add('glow-text', 'active-month');
+            }
+
+            // Highlight Day
+            const dayEl = document.getElementById(`day-${day}`);
+            if(dayEl) {
+                dayEl.parentElement.classList.add('glow-text', 'active-day');
+            }
+
+
+            // --- 3. ANALOG HANDS MOVEMENT ---
+            // Smooth continuous movement
+            const minDeg = (m * 6) + (s * 0.1);
+            const hourDeg = (h * 30) + (m * 0.5);
+
+            document.getElementById('hand-minute').style.transform = `translateX(-50%) rotate(${minDeg}deg)`;
+            document.getElementById('hand-hour').style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+        }
+
+        // --- START ENGINE ---
+        // Update immediately, then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+
+    </script>
+</body>
+</html>
